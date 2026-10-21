@@ -1393,8 +1393,32 @@ func (r *Renderer) woke() {
 }
 
 // awaitRefresh returns once the display's next refresh shows; tests
-// replace it.
-var awaitRefresh = func() { procDwmFlush.Call() }
+// replace it. DwmFlush may return at once when DWM has nothing to
+// compose, or wait until it next has, so the wait lasts at least
+// minRefresh and at most maxRefresh.
+var awaitRefresh = func() {
+	start := time.Now()
+	done := make(chan struct{})
+	go func() {
+		procDwmFlush.Call()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(maxRefresh):
+	}
+	if d := minRefresh - time.Since(start); d > 0 {
+		time.Sleep(d)
+	}
+}
+
+// minRefresh and maxRefresh bound awaitRefresh's wait: a 60 Hz refresh's
+// period, as frames that show nothing new need come no faster, and a few
+// of them, so that an animation goes on when DWM composes nothing.
+const (
+	minRefresh = time.Second / 60
+	maxRefresh = 4 * minRefresh
+)
 
 // waitRefresh has the frame following one that changed nothing, which
 // presents nothing to wait for, wait for the display's next refresh as a
