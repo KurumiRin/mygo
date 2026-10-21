@@ -1,9 +1,6 @@
 package ui
 
-import (
-	"math"
-	"testing"
-)
+import "testing"
 
 // A chart in a scroll container zooms with a mouse wheel and pinches, and
 // pans with a touchpad's scrolling, with where the pointer is over it:
@@ -20,7 +17,11 @@ func TestChartZoomsAndPans(t *testing.T) {
 				case ev.Kind == InputZoom:
 					scale *= ev.Scale
 				case ev.Kind == InputScroll && !ev.Precise:
-					scale *= float32(math.Pow(1.25, float64(-ev.DY/40)))
+					if ev.DY < 0 {
+						scale *= 1.25
+					} else if ev.DY > 0 {
+						scale *= 0.8
+					}
 				case ev.Kind == InputScroll:
 					panX += ev.DX
 				default:
@@ -62,9 +63,8 @@ func TestChartZoomsAndPans(t *testing.T) {
 	}
 }
 
-// Scrolling a chart leaves pinches to an element around it that zooms,
-// and an element that leaves scrolling to the scroll container still
-// gets the pinches it takes.
+// An element that leaves scrolling to the scroll container still gets
+// the pinches it takes, and a pinch that zooms by 1 comes to no element.
 func TestZoomLeftToContainer(t *testing.T) {
 	var page ScrollState
 	var zooms []float32

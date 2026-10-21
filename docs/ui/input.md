@@ -229,8 +229,13 @@ ui.Box(c).Fill().HandleInput(func(ev ui.InputEvent) bool {
 	case ev.Kind == ui.InputZoom:
 		app.chart.zoom(ev.X, ev.Scale)
 	case ev.Kind == ui.InputScroll && !ev.Precise:
-		// A notch, 40 DIPs, zooms by a quarter.
-		app.chart.zoom(ev.X, float32(math.Pow(1.25, float64(-ev.DY/40))))
+		// A notch, which scrolls further on some platforms than on
+		// others, zooms by a quarter.
+		if ev.DY < 0 {
+			app.chart.zoom(ev.X, 1.25)
+		} else if ev.DY > 0 {
+			app.chart.zoom(ev.X, 0.8)
+		}
 	case ev.Kind == ui.InputScroll:
 		app.chart.pan(ev.DX)
 	default:
