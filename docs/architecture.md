@@ -4099,6 +4099,16 @@ in its atlases, encoding its passes), the Encode metric, as the Metal
 renderer's benchmarks report too (`BenchmarkRenderPanels`: a page of
 cards taking hundreds of batches).
 
+`BenchmarkLayout` and `BenchmarkLayoutPanGUI` in `ui` time flexbox
+alone, on trees of boxes without text laid out from scratch: the first
+on trees shaped as Taffy's flexbox benchmarks build theirs, the second
+on the 13 workloads of PanGUI's layout benchmarks (`ui/testdata/pangui`),
+translated as Taffy's benchmark translates them, so that its results
+compare with Rust's engines at
+[arewelayoutyet.mespin.me](https://arewelayoutyet.mespin.me) run on the
+same machine. `TestLayoutPanGUI` checks the workloads' trees and some of
+their boxes.
+
 Benchmarks are described on the page by their doc comments, which the
 site reads when it is built: start them with the benchmark's name.
 
