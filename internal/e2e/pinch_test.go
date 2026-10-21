@@ -17,8 +17,14 @@ func TestPinchZooms(t *testing.T) {
 	type zoom struct{ x, y, scale float32 }
 	var got atomic.Pointer[zoom]
 	var drawn atomic.Bool
+	var missed atomic.Pointer[zoom] // a pinch outside the element
 	view := func(c *ui.Context) {
-		ui.Box(c).Fill().Children(func() {
+		ui.Box(c).Fill().HandleInput(func(ev ui.InputEvent) bool {
+			if ev.Kind == ui.InputZoom {
+				missed.Store(&zoom{ev.X, ev.Y, ev.Scale})
+			}
+			return false
+		}).Children(func() {
 			ui.Box(c).Absolute().Left(40).Top(30).Size(200, 120).HandleInput(func(ev ui.InputEvent) bool {
 				if ev.Kind != ui.InputZoom {
 					return false
@@ -38,7 +44,12 @@ func TestPinchZooms(t *testing.T) {
 	if !ok {
 		t.Skip("pinch automation unavailable")
 	}
-	eventually(t, "the pinch", func() bool { return got.Load() != nil })
+	eventually(t, "the pinch", func() bool {
+		if m := missed.Load(); m != nil {
+			t.Fatalf("the pinch zoomed by %v at (%v, %v) of the window, outside the element", m.scale, m.x, m.y)
+		}
+		return got.Load() != nil
+	})
 	z := got.Load()
 	if math.Abs(float64(z.scale)-want) > 1e-3 || math.Abs(float64(z.x-60)) > 1 || math.Abs(float64(z.y-60)) > 1 {
 		t.Fatalf("the pinch zoomed by %v at (%v, %v), want %v at (60, 60)", z.scale, z.x, z.y, want)
