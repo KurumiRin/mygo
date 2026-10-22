@@ -66,7 +66,10 @@ func HidingScript(lists []*List) string {
 }
 
 // cosmeticScript hides what lists select, through a style sheet the
-// document adopts, which needs no element to exist yet. The domains of
+// document adopts, which needs no element to exist yet, and which a page
+// setting the document's adoptedStyleSheets keeps. Unlike WebKit's
+// user style sheet, it is the page's own: an element's inline style with
+// !important wins over it. The domains of
 // the rules are the page's, as in WebKit, which a frame of another
 // origin knows by its referrer.
 const cosmeticScript = `const url=location.href;
@@ -83,4 +86,8 @@ if(e.i)hidden=[];else hidden.push(...e.s)}
 for(const s of hidden)css.push(s+"{display:none!important}")}
 if(css.length===0)return;
 const sheet=new CSSStyleSheet();sheet.replaceSync(css.join("\n"));
-document.adoptedStyleSheets=[...document.adoptedStyleSheets,sheet];`
+const adopted=Object.getOwnPropertyDescriptor(Document.prototype,"adoptedStyleSheets");
+adopted.set.call(document,[...adopted.get.call(document),sheet]);
+Object.defineProperty(document,"adoptedStyleSheets",{configurable:true,enumerable:true,
+get(){return adopted.get.call(this)},
+set(v){adopted.set.call(this,Array.prototype.includes.call(v,sheet)?v:[...v,sheet])}});`

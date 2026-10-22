@@ -25,6 +25,10 @@ func TestContentRules(t *testing.T) {
 			w.Header().Set("Content-Type", "text/javascript")
 			fmt.Fprint(w, "window.adLoaded = true")
 			return
+		case "/ads/data":
+			adLoads.Add(1)
+			fmt.Fprint(w, "data")
+			return
 		case "/app.js":
 			w.Header().Set("Content-Type", "text/javascript")
 			fmt.Fprint(w, "window.appLoaded = true")
@@ -43,6 +47,7 @@ func TestContentRules(t *testing.T) {
 	source := `[
 		{"trigger":{"url-filter":"/run-` + fmt.Sprint(time.Now().UnixNano()) + `/"},"action":{"type":"block"}},
 		{"trigger":{"url-filter":"/ads/","resource-type":["script"]},"action":{"type":"block"}},
+		{"trigger":{"url-filter":"/ads/data","resource-type":["raw"]},"action":{"type":"block"}},
 		{"trigger":{"url-filter":".*"},"action":{"type":"css-display-none","selector":".banner"}}]`
 	_, err := mygo.CompileContentRules(id, source)
 	if errors.Is(err, errors.ErrUnsupported) {
@@ -89,8 +94,36 @@ func TestContentRules(t *testing.T) {
 	if got := state(); got != "true false none block" {
 		t.Errorf("with the rules: app, ad, banner and text are %q, want the ad blocked and the banner hidden", got)
 	}
+	// A blocked fetch or XMLHttpRequest fails as the network would.
+	loads := func() string {
+		s, err := mygo.EvalAs[string](w.Page(), `(async () => {
+			const f = await fetch("/ads/data").then(r => "resolved " + r.status, () => "rejected");
+			const x = await new Promise(done => {
+				const r = new XMLHttpRequest();
+				r.onload = () => done("load " + r.status);
+				r.onerror = () => done("error");
+				r.open("GET", "/ads/data");
+				r.send();
+			});
+			return f + ", " + x;
+		})()`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return s
+	}
+	if got := loads(); got != "rejected, error" {
+		t.Errorf("blocked fetch and XMLHttpRequest: %q, want them failing", got)
+	}
 	if n := adLoads.Load(); n != 0 {
-		t.Errorf("the blocked script was requested %d times", n)
+		t.Errorf("what the rules block was requested %d times", n)
+	}
+	// A page setting its own adopted style sheets keeps what hides.
+	if got, err := mygo.EvalAs[string](w.Page(), `(() => {
+		document.adoptedStyleSheets = [new CSSStyleSheet()];
+		return getComputedStyle(document.getElementById("banner")).display;
+	})()`); err != nil || got != "none" {
+		t.Errorf("the banner after the page adopted its style sheets: %q, %v", got, err)
 	}
 
 	w.Page().SetContentRules()
@@ -98,5 +131,8 @@ func TestContentRules(t *testing.T) {
 	waitFor(t, w, "document.title === 'loaded' && window.adLoaded === true")
 	if got := state(); got != "true true block block" {
 		t.Errorf("without the rules: %q", got)
+	}
+	if got := loads(); got != "resolved 200, load 200" {
+		t.Errorf("fetch and XMLHttpRequest without the rules: %q", got)
 	}
 }

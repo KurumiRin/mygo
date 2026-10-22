@@ -73,9 +73,11 @@ var applyContentRules func(n platform.Page, rules []*ContentRules)
 //
 // macOS and Linux (WebKitGTK 2.24 or later) compile the rules with
 // WebKit's content blockers; on Windows MyGo matches every load of a page
-// applying rules against them, and hides elements with a style sheet it
-// adds to each document. In browsers it returns an error
-// matching errors.ErrUnsupported.
+// applying rules against them, and hides elements with a style sheet each
+// document adopts. There WebSockets go unblocked, as WebView2 does not
+// show their requests, and an element's inline style with !important
+// wins over the style sheet. In browsers it returns an error matching
+// errors.ErrUnsupported.
 func CompileContentRules(id, rules string) (*ContentRules, error) {
 	needsApp("CompileContentRules")
 	if !validContentRulesID(id) {

@@ -1,4 +1,4 @@
-//go:build windows
+//go:build windows && (amd64 || arm64)
 
 package windows
 
@@ -112,7 +112,7 @@ func resourceTypes(resource int32) contentrules.Type {
 		return contentrules.Raw
 	case 8:
 		return contentrules.Raw | contentrules.Fetch
-	case 11:
+	case 11: // which WebView2 does not raise WebResourceRequested for, so far
 		return contentrules.Raw | contentrules.WebSocket
 	case 14:
 		return contentrules.Ping
@@ -121,8 +121,14 @@ func resourceTypes(resource int32) contentrules.Type {
 }
 
 // filterContent applies the window's content rules to a request, and
-// reports whether it answered it: an empty 403 for a request they
-// block, a redirect to https for one they make secure.
+// reports whether it answered it: a request they block fails, and one
+// they make secure goes to https.
+//
+// WebView2 cannot fail a request from WebResourceRequested, and a fetch
+// or an XMLHttpRequest takes any response, a 403 too, where WebKit's
+// blocked load is a network error, which pages tell apart. A redirect to
+// a data: URL is one, as Chromium follows none from a load of a page. A
+// page itself gets an empty 403, as a navigation would follow it.
 func (w *window) filterContent(rules []*contentrules.List, args, req uintptr, uri string, resource int32) bool {
 	const document = 1 // COREWEBVIEW2_WEB_RESOURCE_CONTEXT_DOCUMENT
 	target := w.appURL(uri)
@@ -132,8 +138,11 @@ func (w *window) filterContent(rules []*contentrules.List, args, req uintptr, ur
 	}
 	r := contentrules.Match(rules, contentrules.Request{URL: target, TopURL: top, Type: resourceTypes(resource)})
 	switch {
-	case r.Block:
+	case r.Block && resource == document:
 		w.respond(args, 0, http.StatusForbidden, nil, nil)
+		return true
+	case r.Block:
+		w.respond(args, 0, http.StatusTemporaryRedirect, http.Header{"Location": {"data:,"}}, nil)
 		return true
 	case r.MakeHTTPS && target == uri:
 		secure := "https:" + strings.TrimPrefix(uri, "http:")

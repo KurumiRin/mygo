@@ -656,11 +656,18 @@ on go through them, and the page shows what it loaded until it reloads.
 
 macOS and Linux (WebKitGTK 2.24 or newer) apply the rules with WebKit's
 content blockers. WebView2 has none, so on Windows MyGo sees every request
-of a page applying rules, answers the blocked ones with an empty 403
-response and redirects those `make-https` matches, and hides elements with
-a style sheet it adds to each document. A popup (`resource-type`
-`popup`) is not matched there, and `block-cookies` removes the cookies of
-the request, not those of the response.
+of a page applying rules and fails the blocked ones: a blocked `fetch`
+rejects and an `XMLHttpRequest` errs, as in WebKit, while a blocked page
+shows WebView2's error page for a 403 response. It redirects what
+`make-https` matches, and hides elements with a style sheet each document
+adopts. There:
+
+- WebSockets are not blocked: WebView2 does not show MyGo their requests.
+- Popups (`resource-type` `popup`) are not matched.
+- `block-cookies` removes the cookies of the request, not those of the
+  response.
+- An element whose own `style` says `display: ... !important` stays: the
+  style sheet is the page's, where WebKit's is the user's, which wins.
 
 ### The web inspector
 
