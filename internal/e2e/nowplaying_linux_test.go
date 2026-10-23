@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -48,14 +49,9 @@ func TestNowPlayingMPRIS(t *testing.T) {
 	var name string
 	eventually(t, "the player's bus name", func() bool {
 		out, _ := call("-d", "org.freedesktop.DBus", "-o", "/org/freedesktop/DBus", "-m", "org.freedesktop.DBus.ListNames")
-		suffix := fmt.Sprintf(".instance%d'", os.Getpid())
-		for _, f := range strings.Split(out, ", ") {
-			if f = strings.Trim(f, "(['])"); strings.HasPrefix(f, "org.mpris.MediaPlayer2.") && strings.HasSuffix(f+"'", suffix) {
-				name = f
-				return true
-			}
-		}
-		return false
+		// A list of quoted names, as (['org.freedesktop.DBus', ':1.0'],)
+		name = regexp.MustCompile(fmt.Sprintf(`org\.mpris\.MediaPlayer2\.[^']+\.instance%d\b`, os.Getpid())).FindString(out)
+		return name != ""
 	})
 	player := func(args ...string) string {
 		t.Helper()
