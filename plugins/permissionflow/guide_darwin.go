@@ -51,6 +51,7 @@ const (
 	nsDragOperationCopy                 = 1
 	nsDraggingFormationNone             = 1
 	nsImageOnly                         = 1
+	nsImageResizingModeStretch          = 1
 	nsTextAlignmentCenter               = 2
 	kCGWindowListOptionOnScreenOnly     = 1 << 0
 	kCGWindowListExcludeDesktopElements = 1 << 4
@@ -59,6 +60,7 @@ const (
 
 	// The panel's layout, in points.
 	panelPadding = 12
+	panelRadius  = 16
 	cardHeight   = 48
 	iconSize     = 32
 	closeSize    = 18
@@ -464,16 +466,17 @@ func (f *flow) build(w float64) {
 	effect.Send(sel("setMaterial:"), nsVisualEffectMaterialPopover)
 	effect.Send(sel("setBlendingMode:"), nsVisualEffectBlendingBehindWindow)
 	effect.Send(sel("setState:"), nsVisualEffectStateActive)
-	effect.Send(sel("setWantsLayer:"), true)
-	layer := effect.Send(sel("layer"))
-	layer.Send(sel("setCornerRadius:"), 16.0)
-	layer.Send(sel("setMasksToBounds:"), true)
+	// A layer's corner radius doesn't clip what the view blurs from behind
+	// the window: a mask does, and the window's shadow follows it.
+	mask := roundedMask(panelRadius)
+	effect.Send(sel("setMaskImage:"), mask)
+	mask.Send(sel("release"))
 	panel.Send(sel("setContentView:"), effect)
 	effect.Send(sel("release"))
 
 	color := func(name string) objc.ID { return class("NSColor").Send(sel(name)) }
 	v := &f.views
-	v.border = newBox(color("clearColor"), 16)
+	v.border = newBox(color("clearColor"), panelRadius)
 	effect.Send(sel("addSubview:"), v.border)
 	v.border.Send(sel("release"))
 
@@ -548,6 +551,21 @@ func (f *flow) build(w float64) {
 	card.Send(sel("release"))
 	v.card = card
 	f.panel = panel
+}
+
+// roundedMask returns an image of a rounded rectangle that stretches to
+// any size, keeping its corners, for NSVisualEffectView's maskImage.
+func roundedMask(radius float64) objc.ID {
+	side := 2*radius + 1
+	img := class("NSImage").Send(sel("alloc")).Send(sel("initWithSize:"), nsSize{side, side})
+	img.Send(sel("lockFocus"))
+	class("NSColor").Send(sel("blackColor")).Send(sel("set"))
+	class("NSBezierPath").Send(sel("bezierPathWithRoundedRect:xRadius:yRadius:"), nsRect{Size: nsSize{side, side}}, radius, radius).Send(sel("fill"))
+	img.Send(sel("unlockFocus"))
+	type nsEdgeInsets struct{ Top, Left, Bottom, Right float64 }
+	img.Send(sel("setCapInsets:"), nsEdgeInsets{radius, radius, radius, radius})
+	img.Send(sel("setResizingMode:"), nsImageResizingModeStretch)
+	return img
 }
 
 // newBox returns a rounded box with the separator's border, filled.
