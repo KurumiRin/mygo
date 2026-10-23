@@ -28,6 +28,9 @@ JavaScript package whose functions call them. The app uses the Go half with
   one standard layout. It is all Go.
 - [Loading](plugins/loading.md): loading.dev's 29 loading indicators for
   native UI, as they look and move in browsers. It is all Go.
+- [Screen capture](plugins/screencapture.md): screenshots of displays and
+  windows, and recordings of them as frames, with ScreenCaptureKit,
+  Windows.Graphics.Capture and PipeWire. It is all Go.
 
 ## Using plugins
 

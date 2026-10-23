@@ -155,6 +155,8 @@ components, from buttons to tables.
   one standard layout.
 - [Loading](plugins/loading.md): loading.dev's 29 loading indicators for
   native UI.
+- [Screen capture](plugins/screencapture.md): screenshots of displays and
+  windows, and recordings of them as frames.
 
 ## Reference
 
