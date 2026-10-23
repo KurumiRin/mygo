@@ -64,7 +64,7 @@ type Kind = (typeof kinds)[number]["id"]
 
 // main.go morphs between the two kinds: what both share moves, the rest
 // fades. The colors come from .shiki's variables, not the container.
-const magicMove = { duration: 600, stagger: 0, containerStyle: false, animateContainer: true }
+const magicMove = { duration: 600, stagger: 0, containerStyle: false, animateContainer: false }
 
 function Home() {
   const { main, ts } = Route.useLoaderData()
@@ -134,25 +134,45 @@ function Home() {
         <div role="tabpanel" id="code-panel" aria-labelledby={`tab-${kind}`} className="grid lg:grid-cols-[1.3fr_1fr] lg:divide-x">
           <figure className="min-w-0">
             <figcaption className="label border-b px-4 py-3 sm:px-6">main.go</figcaption>
-            <div className="shiki overflow-x-auto px-4 py-5 sm:px-6">
-              <ShikiMagicMovePrecompiled
-                steps={main}
-                step={kind === "web" ? 0 : 1}
-                animate={animate}
-                options={magicMove}
-              />
+            <div className="shiki overflow-x-auto overflow-y-hidden px-4 py-5 sm:px-6">
+              {/* Both examples size the stage, even before hydration. Moving
+                  tokens cannot change its size or the scrollable overflow. */}
+              <div className="relative grid w-max min-w-full overflow-clip">
+                {main.map((example) => (
+                  <pre key={example.hash} aria-hidden="true" className="invisible col-start-1 row-start-1 select-none">
+                    {example.code}
+                  </pre>
+                ))}
+                <div className="absolute inset-0">
+                  <ShikiMagicMovePrecompiled
+                    steps={main}
+                    step={kind === "web" ? 0 : 1}
+                    animate={animate}
+                    options={magicMove}
+                  />
+                </div>
+              </div>
             </div>
           </figure>
-          {kind === "web" ? (
-            <figure className="flex min-w-0 flex-col border-t lg:border-t-0">
+          {/* Keep both descriptions in the same grid cell so their maximum
+              height is reserved at every breakpoint, including stacked layouts. */}
+          <div className="grid min-w-0 border-t lg:border-t-0">
+            <figure
+              aria-hidden={kind !== "web"}
+              inert={kind !== "web"}
+              className={cn("col-start-1 row-start-1 flex min-w-0 flex-col", kind !== "web" && "invisible")}
+            >
               <figcaption className="label border-b px-4 py-3 sm:px-6">src/main.ts</figcaption>
               <div className="overflow-x-auto px-4 py-5 sm:px-6" dangerouslySetInnerHTML={{ __html: ts }} />
               <p className="mt-auto border-t px-4 py-4 text-sm leading-6 text-muted-foreground sm:px-6">
                 <code className="font-mono text-foreground">./mygo</code> is generated from main.go, with the types of your structs and the docs of your methods.
               </p>
             </figure>
-          ) : (
-            <div className="flex min-w-0 flex-col border-t lg:border-t-0">
+            <div
+              aria-hidden={kind !== "native"}
+              inert={kind !== "native"}
+              className={cn("col-start-1 row-start-1 flex min-w-0 flex-col", kind !== "native" && "invisible")}
+            >
               <p className="label border-b px-4 py-3 sm:px-6">No webview</p>
               <div className="space-y-4 px-4 py-5 text-sm leading-6 text-muted-foreground sm:px-6">
                 <p>
@@ -171,7 +191,7 @@ function Home() {
                 </pre>
               </figure>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
