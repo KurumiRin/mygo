@@ -155,6 +155,9 @@ components, from buttons to tables.
   one standard layout.
 - [Loading](plugins/loading.md): loading.dev's 29 loading indicators for
   native UI.
+- [PermissionFlow](plugins/permissionflow.md): the system's permissions,
+  such as Accessibility and Screen Recording, checked and asked for, and a
+  guide to System Settings with the app to drag into its list.
 
 ## Reference
 

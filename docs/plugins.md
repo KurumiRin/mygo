@@ -28,6 +28,10 @@ JavaScript package whose functions call them. The app uses the Go half with
   one standard layout. It is all Go.
 - [Loading](plugins/loading.md): loading.dev's 29 loading indicators for
   native UI, as they look and move in browsers. It is all Go.
+- [PermissionFlow](plugins/permissionflow.md): the permissions the system
+  keeps for the user to give, such as Accessibility, Screen Recording and
+  the microphone: checked, asked for, and a guide to System Settings with
+  the app to drag into its list, after PermissionFlow. It is all Go.
 
 ## Using plugins
 
