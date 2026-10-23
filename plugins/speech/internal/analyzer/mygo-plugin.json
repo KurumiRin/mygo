@@ -1,3 +1,20 @@
 {
-  "libraries": []
+  "libraries": [
+    {
+      "name": "mygo-speech",
+      "source": "plugins/speech/internal/analyzer/native/analyzer.swift",
+      "files": {
+        "darwin-amd64": {
+          "name": "libmygo-speech.dylib",
+          "url": "https://github.com/egoist/mygo/releases/download/speech-analyzer-1/mygo-speech-darwin-amd64.dylib",
+          "sha256": "62ad635291eba5aa400d4b2d1f2bcf8e2468723fd89f691db52b05a84f554f30"
+        },
+        "darwin-arm64": {
+          "name": "libmygo-speech.dylib",
+          "url": "https://github.com/egoist/mygo/releases/download/speech-analyzer-1/mygo-speech-darwin-arm64.dylib",
+          "sha256": "6ddf6a98a3569ba58f3c81ffc52ec0ea1f81f06445b60a3d25814682acfa9548"
+        }
+      }
+    }
+  ]
 }
