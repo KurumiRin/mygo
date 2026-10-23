@@ -60,6 +60,18 @@ func hstring(h uintptr) string {
 	return syscall.UTF16ToString(unsafe.Slice((*uint16)(native(p)), n))
 }
 
+// longPath returns the long form of a path, which storage items give for
+// the temporary directory's short one (RUNNER~1).
+func longPath(t *testing.T, p string) string {
+	t.Helper()
+	buf := make([]uint16, syscall.MAX_PATH)
+	n, err := syscall.GetLongPathName(u16(p), &buf[0], uint32(len(buf)))
+	if err != nil || int(n) > len(buf) {
+		t.Fatalf("GetLongPathName(%q): %v", p, err)
+	}
+	return syscall.UTF16ToString(buf[:n])
+}
+
 // inMTA runs the test on a thread of the MTA, as storageItems runs.
 func inMTA(t *testing.T) {
 	runtime.LockOSThread()
@@ -91,7 +103,7 @@ func TestShareData(t *testing.T) {
 		if hr := comCall(storage[i], 12, uintptr(unsafe.Pointer(&h))); failed(hr) {
 			t.Fatal(hresultError("IStorageItem.Path", hr))
 		}
-		if got := hstring(h); got != want {
+		if got := hstring(h); got != longPath(t, want) {
 			t.Errorf("storage item %d is %q, want %q", i, got, want)
 		}
 		winrt.deleteString.Call(h)
