@@ -32,7 +32,7 @@ var (
 	selInfoObject, selStringWithBytes, selUTF8, selLength, selLocaleWithID,
 	selInitWithLocale, selAuthStatus, selRequestAuth, selAVAuthStatus,
 	selAVRequestAccess, selIsAvailable, selSupportsOnDevice, selSetQueue,
-	selSetMaxOps, selSetPartial, selSetOnDevice, selSetPunctuation, selInputNode,
+	selSetMaxOps, selSetTaskHint, selSetPartial, selSetOnDevice, selSetPunctuation, selInputNode,
 	selOutputFormat, selSampleRate, selInstallTap, selRemoveTap, selAppendBuffer,
 	selPrepare, selStartEngine, selStopEngine, selEndAudio, selTaskWithRequest,
 	selCancel, selBestTranscription, selFormattedString, selIsFinal, selDomain,
@@ -77,7 +77,7 @@ func loadSpeech() bool {
 		selAuthStatus, selRequestAuth = sel("authorizationStatus"), sel("requestAuthorization:")
 		selAVAuthStatus, selAVRequestAccess = sel("authorizationStatusForMediaType:"), sel("requestAccessForMediaType:completionHandler:")
 		selIsAvailable, selSupportsOnDevice, selSetQueue = sel("isAvailable"), sel("supportsOnDeviceRecognition"), sel("setQueue:")
-		selSetMaxOps = sel("setMaxConcurrentOperationCount:")
+		selSetMaxOps, selSetTaskHint = sel("setMaxConcurrentOperationCount:"), sel("setTaskHint:")
 		selSetPartial, selSetOnDevice, selSetPunctuation = sel("setShouldReportPartialResults:"), sel("setRequiresOnDeviceRecognition:"), sel("setAddsPunctuation:")
 		selInputNode, selOutputFormat, selSampleRate = sel("inputNode"), sel("outputFormatForBus:"), sel("sampleRate")
 		selInstallTap, selRemoveTap, selAppendBuffer = sel("installTapOnBus:bufferSize:format:block:"), sel("removeTapOnBus:"), sel("appendAudioPCMBuffer:")
@@ -250,6 +250,7 @@ func (s *sfSession) start(opts Options) error {
 
 	s.request = newObject("SFSpeechAudioBufferRecognitionRequest")
 	s.request.Send(selSetPartial, true)
+	s.request.Send(selSetTaskHint, 1) // SFSpeechRecognitionTaskHintDictation
 	if opts.OnDevice {
 		s.request.Send(selSetOnDevice, true)
 	}
