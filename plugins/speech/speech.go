@@ -75,8 +75,10 @@ func Supported() bool { return supported() }
 // On macOS the app's Info.plist needs NSSpeechRecognitionUsageDescription
 // and NSMicrophoneUsageDescription (macos.infoPlist of mygo.config.ts),
 // without which macOS would end the app: it returns an error saying so
-// instead. On Windows the user allows the microphone for desktop apps,
-// and online speech recognition, in Settings > Privacy.
+// instead. Windows has no prompt for desktop apps: the user allows the
+// microphone and online speech recognition in Settings > Privacy, and
+// RequestPermission returns nil, since Windows tells what Settings refuse
+// only when a recognition starts, where Start returns ErrDenied.
 func RequestPermission(ctx context.Context) error {
 	if !supported() {
 		return ErrUnsupported

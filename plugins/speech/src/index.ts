@@ -96,7 +96,9 @@ export const isSupported = (): Promise<boolean> => call<boolean>("plugin:speech.
 /**
  * Asks the user, the first time, to let the app recognize speech and use
  * the microphone, and rejects with a {@link SpeechError} when they or the
- * system don't. {@link listen} asks too.
+ * system don't. {@link listen} asks too. Windows has no prompt for desktop
+ * apps and tells what its Settings refuse only once a recognition starts:
+ * there it resolves, and {@link listen} rejects with "denied".
  */
 export async function requestPermission(): Promise<void> {
   const err = toError(await call<Outcome | null>("plugin:speech.RequestPermission"));

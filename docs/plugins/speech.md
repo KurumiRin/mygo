@@ -90,7 +90,9 @@ micButton.onclick = async () => {
 - `closed` settles once the recognition ended, rejecting with what ended
   it.
 - `requestPermission()` asks for permission without listening, for an
-  app that explains before the system's prompt.
+  app that explains before the system's prompt. On Windows, which has no
+  prompt for desktop apps, it resolves, and `listen` rejects with
+  `denied` when Settings refuse.
 
 A `SpeechError` has a code:
 

@@ -188,6 +188,19 @@ func getObject(obj uintptr, slot int) uintptr {
 	return out
 }
 
+// callAsync calls a method that starts an async action or operation, and
+// returns it or what failed.
+func callAsync(obj uintptr, slot int) (uintptr, error) {
+	var op uintptr
+	if hr := comCall(obj, slot, uintptr(unsafe.Pointer(&op))); failed(hr) {
+		return 0, hresultError(hr)
+	}
+	if op == 0 {
+		return 0, errors.New("speech: speech recognition did not start")
+	}
+	return op, nil
+}
+
 func getInt32(obj uintptr, slot int) int32 {
 	var v int32
 	if failed(comCall(obj, slot, uintptr(unsafe.Pointer(&v)))) {
@@ -303,7 +316,8 @@ func platformSupported() bool {
 }
 
 // platformAuthorize has nothing to ask: Windows has no prompt for
-// unpackaged apps, and platformStart reports what Settings refuse.
+// unpackaged apps, and what Settings refuse shows only once a recognition
+// starts, which platformStart reports as ErrDenied.
 func platformAuthorize(context.Context) error { return nil }
 
 // A delegate is a WinRT delegate backed by a Go function: an event
@@ -501,9 +515,9 @@ func (s *winSession) start(opts Options) error {
 	}
 
 	// No constraints: the dictation of the language.
-	op := getObject(s.recognizer, slotCompile)
-	if op == 0 {
-		return errors.New("speech: the recognizer did not compile its constraints")
+	op, err := callAsync(s.recognizer, slotCompile)
+	if err != nil {
+		return err
 	}
 	compiled, err := await(op, iidCompileCompleted, true)
 	release(op)
@@ -533,8 +547,9 @@ func (s *winSession) start(opts Options) error {
 	comCall(s.session, slotAddCompleted, done, uintptr(unsafe.Pointer(&s.doneTok)))
 	release(done)
 
-	if op = getObject(s.session, slotStartAsync); op == 0 {
-		return errors.New("speech: the recognition did not start")
+	// StartAsync fails right away when Settings refuse.
+	if op, err = callAsync(s.session, slotStartAsync); err != nil {
+		return err
 	}
 	_, err = await(op, iidAsyncActionCompleted, false)
 	release(op)
