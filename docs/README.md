@@ -144,6 +144,8 @@ components, from buttons to tables.
   and atomic transactions, without cgo.
 - [Watch](plugins/watch.md): changes to files, in the directories the app
   lets pages watch.
+- [Speech](plugins/speech.md): speech to text from the microphone, with
+  the recognizer of macOS and of Windows.
 - [Updater](plugins/updater.md): an update window in the manner of
   Sparkle, which checks for updates and offers to install them.
 - [Terminal](plugins/terminal.md): a terminal for native UI, which runs

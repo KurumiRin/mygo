@@ -112,7 +112,12 @@ Windows GUI tests need Windows with the WebView2 Runtime (a GitHub Actions
   opt-in, kept out of core `ui`: a game loop and a camera for native UI,
   and `plugins/game/gamepad`, which reads controllers. The loading plugin
   is Go only too, loading.dev's indicators drawn with `ui.Painter` on
-  ui's public API: keep them as loading-dev draws them in a browser.
+  ui's public API: keep them as loading-dev draws them in a browser. The speech
+  plugin recognizes speech with the system's recognizer, through purego
+  (SFSpeechRecognizer) on macOS and WinRT's vtables
+  (Windows.Media.SpeechRecognition) on Windows, and fails with
+  `ErrUnsupported` elsewhere: its Go API serves native UI, its service
+  and npm package pages.
 - The `dist/` of npm packages is not committed: run `bun run build` after
   `bun install` (CI and releases do). Commit `internal/bridge/bridge.js`
   whenever its sources change, and keep the generated clients of examples
