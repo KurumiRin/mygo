@@ -96,7 +96,7 @@ func TestNowPlayingMPRIS(t *testing.T) {
 	track = track[:strings.IndexByte(track, '\'')]
 	player("org.mpris.MediaPlayer2.Player.SetPosition", track, "60000000")
 	want := []string{
-		fmt.Sprint(mygo.MediaPlay, " 0s"),
+		fmt.Sprint(mygo.MediaPlay, " 10s"), // where it was paused
 		fmt.Sprint(mygo.MediaSeek, " 15s"),
 		fmt.Sprint(mygo.MediaSeek, " 1m0s"),
 	}

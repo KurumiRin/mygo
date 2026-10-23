@@ -149,7 +149,9 @@ func (n *NowPlayingModule) Info() (NowPlayingInfo, bool) {
 
 // OnCommand is called on the main thread with each command of the media
 // keys and the system's controls while NowPlaying shows something:
-// position is where MediaSeek moves to, within the track. The app plays,
+// position is where MediaSeek moves to, within the track, and for the
+// other commands where playback is as the command comes, so that
+// SetPlayback(PlaybackPaused, position) keeps the place. The app plays,
 // pauses or moves as it asks, and says so with SetPlayback (or Set, for
 // another track).
 func (n *NowPlayingModule) OnCommand(fn func(cmd MediaCommand, position time.Duration)) (off func()) {
@@ -324,6 +326,9 @@ func (n *NowPlayingModule) command(cmd platform.MediaCommand, position time.Dura
 	if c&n.commandsLocked() == 0 {
 		n.mu.Unlock()
 		return
+	}
+	if c != MediaSeek {
+		position = n.positionLocked()
 	}
 	if d := n.info.Duration; d > 0 {
 		position = min(position, d)

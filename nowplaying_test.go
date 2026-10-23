@@ -60,13 +60,16 @@ func TestNowPlaying(t *testing.T) {
 		fb.EmitMediaCommand(platform.MediaSeek, 2*time.Minute) // past the end
 		fb.EmitMediaCommand(platform.MediaPlay, 0)             // not offered
 	})
-	want := []command{{MediaPlay, 0}, {MediaStop, 0}, {MediaPause, 0}, {MediaNext, 0}, {MediaSeek, time.Minute}}
+	// Commands other than seeking get where playback is: a minute into
+	// Spring, paused, and somewhere in Summer, which plays.
+	const playing = -1
+	want := []command{{MediaPlay, time.Minute}, {MediaStop, time.Minute}, {MediaPause, playing}, {MediaNext, playing}, {MediaSeek, time.Minute}}
 	if len(cmds) != len(want) {
 		t.Fatalf("commands = %v, want %v", cmds, want)
 	}
-	for i := range want {
-		if cmds[i] != want[i] {
-			t.Errorf("command %d = %v, want %v", i, cmds[i], want[i])
+	for i, w := range want {
+		if c := cmds[i]; c.cmd != w.cmd || w.pos != playing && c.pos != w.pos || w.pos == playing && (c.pos < 0 || c.pos > time.Minute) {
+			t.Errorf("command %d = %v, want %v", i, c, w)
 		}
 	}
 

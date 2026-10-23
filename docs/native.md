@@ -364,7 +364,7 @@ mygo.NowPlaying.OnCommand(func(cmd mygo.MediaCommand, pos time.Duration) {
 	switch cmd {
 	case mygo.MediaPause:
 		player.Pause()
-		mygo.NowPlaying.SetPlayback(mygo.PlaybackPaused, player.Position())
+		mygo.NowPlaying.SetPlayback(mygo.PlaybackPaused, pos) // where playback is
 	case mygo.MediaSeek:
 		player.Seek(pos)
 		mygo.NowPlaying.SetPlayback(mygo.PlaybackPlaying, pos)
@@ -379,7 +379,8 @@ The system advances the position while the state is `PlaybackPlaying`, so
 the app sets it again only when playback jumps. The play/pause key sends
 `MediaPause` while the state is playing and `MediaPlay` otherwise, and
 only the commands the info offers reach `OnCommand` (`Commands` 0 offers
-play, pause and stop). An app playing a player of package `audio` can let
+play, pause and stop). `pos` is where `MediaSeek` moves to, and for the
+other commands where playback is as they come. An app playing a player of package `audio` can let
 `Control` play, pause, stop and seek it, and show its state:
 
 ```go
