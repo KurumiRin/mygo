@@ -11,9 +11,13 @@ import (
 
 	"github.com/ebitengine/purego"
 	"github.com/ebitengine/purego/objc"
+	"github.com/egoist/mygo/plugins/speech/internal/analyzer"
 )
 
-// macOS recognizes with SFSpeechRecognizer: an audio buffer request fed
+// macOS 26 and later recognize with SpeechAnalyzer, through the shim of
+// package analyzer, which is on the device and more accurate; older
+// systems, and those without the shim or the language's model, with
+// SFSpeechRecognizer: an audio buffer request fed
 // by a tap on AVAudioEngine's input node, the microphone, with partial
 // results. Its results arrive on an operation queue of the recognition's
 // own, not on the main thread, so that nothing waits for the main run
@@ -217,6 +221,11 @@ type sfSession struct {
 }
 
 func platformStart(ctx context.Context, opts Options, emit func(string, bool), end func(error)) (session, error) {
+	if analyzer.Available() {
+		if s, ok, err := startAnalyzer(ctx, opts, emit, end); ok {
+			return s, err
+		}
+	}
 	s := &sfSession{emit: emit, end: end}
 	var err error
 	withPool(func() { err = s.start(opts) })
@@ -397,4 +406,62 @@ func (s *sfSession) release() {
 			}
 		}
 	})
+}
+
+// analyzerSession is a recognition of SpeechAnalyzer's.
+type analyzerSession struct{ id uint64 }
+
+func (a analyzerSession) stop()   { analyzer.Stop(a.id) }
+func (a analyzerSession) cancel() { analyzer.Cancel(a.id) }
+
+// startAnalyzer starts recognizing with SpeechAnalyzer and waits until it
+// listens. It reports false when SFSpeechRecognizer should recognize
+// instead: SpeechAnalyzer has no model of the language, or failed before
+// it listened.
+func startAnalyzer(ctx context.Context, opts Options, emit func(string, bool), end func(error)) (session, bool, error) {
+	type outcome struct {
+		event int32
+		text  string
+	}
+	var (
+		mu      sync.Mutex
+		running bool
+	)
+	started := make(chan outcome, 2)
+	id := analyzer.Start(opts.Locale, func(event int32, text string) {
+		mu.Lock()
+		if !running {
+			running = event == analyzer.EventReady
+			mu.Unlock()
+			started <- outcome{event, text}
+			return
+		}
+		mu.Unlock()
+		switch event {
+		case analyzer.EventText:
+			emit(text, false)
+		case analyzer.EventFinal:
+			emit(text, true)
+			end(nil)
+		case analyzer.EventCanceled:
+			end(context.Canceled)
+		default:
+			end(errors.New(text))
+		}
+	})
+	select {
+	case o := <-started:
+		switch o.event {
+		case analyzer.EventReady:
+			return analyzerSession{id}, true, nil
+		case analyzer.EventCanceled:
+			return nil, true, context.Canceled
+		}
+		return nil, false, nil
+	case <-ctx.Done():
+		// The first use downloads the language's model, which may take
+		// long.
+		analyzer.Cancel(id)
+		return nil, true, ctx.Err()
+	}
 }

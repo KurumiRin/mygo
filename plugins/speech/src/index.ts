@@ -1,7 +1,8 @@
 /**
  * The speech plugin of MyGo: speech to text from the microphone, with the
- * recognizer of the system (SFSpeechRecognizer on macOS,
- * Windows.Media.SpeechRecognition on Windows). The Go side must use the
+ * recognizer of the system (SpeechAnalyzer on macOS 26 and later,
+ * SFSpeechRecognizer on older macOS, Windows.Media.SpeechRecognition on
+ * Windows). The Go side must use the
  * plugin:
  *
  * ```go

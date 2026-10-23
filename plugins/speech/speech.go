@@ -11,8 +11,8 @@
 //	}
 //	return r.Err()
 //
-// macOS recognizes with SFSpeechRecognizer (Speech.framework) and the
-// microphone through AVAudioEngine, Windows with the continuous dictation of
+// macOS 26 and later recognize with SpeechAnalyzer, older macOS with
+// SFSpeechRecognizer, the microphone through AVAudioEngine, Windows with the continuous dictation of
 // Windows.Media.SpeechRecognition. Linux and browsers have no recognizer
 // of the system: Start fails there with ErrUnsupported. Every function and
 // method is safe to call from any goroutine, the main one included: none

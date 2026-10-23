@@ -113,8 +113,11 @@ Windows GUI tests need Windows with the WebView2 Runtime (a GitHub Actions
   and `plugins/game/gamepad`, which reads controllers. The loading plugin
   is Go only too, loading.dev's indicators drawn with `ui.Painter` on
   ui's public API: keep them as loading-dev draws them in a browser. The speech
-  plugin recognizes speech with the system's recognizer, through purego
-  (SFSpeechRecognizer) on macOS and WinRT's vtables
+  plugin recognizes speech with the system's recognizer: on macOS 26
+  SpeechAnalyzer, a Swift API, through a Swift shim
+  (`plugins/speech/internal/analyzer`, a release asset its
+  `mygo-plugin.json` pins; change it with `go generate` and Xcode 26),
+  else SFSpeechRecognizer through purego; on Windows WinRT's vtables
   (Windows.Media.SpeechRecognition) on Windows, and fails with
   `ErrUnsupported` elsewhere: its Go API serves native UI, its service
   and npm package pages.

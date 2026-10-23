@@ -1,8 +1,9 @@
 # @mygo-plugins/speech
 
 Speech to text for [MyGo](https://github.com/egoist/mygo) apps' pages:
-the microphone, recognized by the system's recognizer, SFSpeechRecognizer
-on macOS and Windows.Media.SpeechRecognition on Windows.
+the microphone, recognized by the system's recognizer: SpeechAnalyzer on
+macOS 26 and later, SFSpeechRecognizer on older macOS, and
+Windows.Media.SpeechRecognition on Windows.
 
 Use the plugin in Go:
 

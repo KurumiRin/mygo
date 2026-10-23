@@ -2,8 +2,8 @@
 
 The speech plugin turns speech into text: it listens to the microphone
 and recognizes what the user says with the recognizer of the system,
-SFSpeechRecognizer on macOS and Windows.Media.SpeechRecognition on
-Windows. Pages use it through `@mygo-plugins/speech`; Go code and native
+SpeechAnalyzer on macOS 26 and later, SFSpeechRecognizer on older macOS,
+and Windows.Media.SpeechRecognition on Windows. Pages use it through `@mygo-plugins/speech`; Go code and native
 UI call the package directly.
 
 Linux has no recognizer of the system, so there the plugin reports
@@ -133,17 +133,26 @@ the main one included.
 | Option | Meaning |
 | --- | --- |
 | `Locale` / `locale` | the language spoken, a BCP 47 tag such as `en-US`: the user's language by default |
-| `OnDevice` / `onDevice` | requires recognition on the device, which sends no audio to a server |
+| `OnDevice` / `onDevice` | requires recognition on the device, which sends no audio to a server (SpeechAnalyzer always is) |
 
 ## Platforms
 
-- **macOS** recognizes with SFSpeechRecognizer, the microphone through
-  AVAudioEngine. The first time, macOS asks the user for speech
+- **macOS 26 and later** recognize with SpeechAnalyzer's
+  SpeechTranscriber, on the device, through a small Swift library of the
+  plugin's (SpeechAnalyzer is a Swift API, which purego doesn't reach),
+  which `mygo build` and `mygo dev` put into the app, and which programs
+  run with `go run` download into the user's cache. The first use of a
+  language downloads its model, which the system then keeps for every
+  app. It has no time limit.
+- **macOS 12 to 15**, and macOS 26 where the transcriber has no model of
+  the language or the library is missing, recognize with
+  SFSpeechRecognizer, the microphone through AVAudioEngine. Recognition
+  happens on Apple's servers unless the language supports it on the
+  device, which `OnDevice` requires; a server recognition ends after
+  about a minute. On macOS 13 and later the transcript has punctuation.
+- On every version, the first time, macOS asks the user for speech
   recognition and for the microphone; afterwards System Settings > Privacy
-  & Security decides. Recognition happens on Apple's servers unless the
-  language supports it on the device, which `OnDevice` requires; a server
-  recognition ends after about a minute. On macOS 13 and later the
-  transcript has punctuation.
+  & Security decides.
 - **Windows** dictates with Windows.Media.SpeechRecognition's continuous
   recognition, which ends after a long silence too. It needs online
   speech recognition on (Settings > Privacy > Speech) and the microphone
