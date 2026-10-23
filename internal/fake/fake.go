@@ -524,8 +524,18 @@ type Window struct {
 	// OnEval, when set, receives the scripts passed to Eval instead of
 	// recording them.
 	OnEval func(js string)
+	// Shares are the share sheets shown, with the anchor each pointed at;
+	// ShareError, when set, is what showing one fails with.
+	Shares     []Share
+	ShareError error
 
 	surface *Surface
+}
+
+// Share is a share sheet a window showed.
+type Share struct {
+	Items  platform.ShareItems
+	Anchor platform.Rect
 }
 
 // Surface returns the window's surface, nil unless it was created with
@@ -587,6 +597,19 @@ func (w *Window) SetIcon(png []byte) error {
 	w.Icon = png
 	w.mu.Unlock()
 	return nil
+}
+
+// Share records the share sheet, as a platform with one shows it.
+func (w *Window) Share(items *platform.ShareItems, anchor platform.Rect, done func(error)) {
+	w.mu.Lock()
+	err := w.ShareError
+	if err == nil {
+		c := *items
+		c.Files = slices.Clone(items.Files)
+		w.Shares = append(w.Shares, Share{c, anchor})
+	}
+	w.mu.Unlock()
+	done(err)
 }
 
 func (w *Window) PrintToPDF(o platform.PDFOptions, cb func([]byte, error)) {

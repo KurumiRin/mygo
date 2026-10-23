@@ -95,6 +95,8 @@ type window struct {
 	// accessParent is the element of the content showing a web view,
 	// which assistive technology finds its page in.
 	accessParent id
+	// sharePicker is the share sheet Share showed last (share.go).
+	sharePicker id
 }
 
 func (b *Backend) NewWindow(o *platform.WindowOptions, h platform.WindowHandler) (platform.Window, error) {
@@ -471,6 +473,7 @@ func (w *window) cleanup() {
 	release(w.effect)
 	release(w.web)
 	release(w.view)
+	autorelease(w.sharePicker)
 	// AppKit is still closing the window; let the pool release it.
 	autorelease(w.delegate)
 	if w.popover == 0 {

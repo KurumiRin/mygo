@@ -184,6 +184,34 @@ Other properties:
   (Windows), the window is marked urgent (Linux) or the Dock icon bounces
   (macOS).
 
+## Sharing
+
+`Share` shows the system's share sheet for the window, which offers the
+apps and services that take text, a link or files: Mail, Messages,
+AirDrop and Notes on macOS, Nearby Share, Mail and the apps that are share
+targets on Windows:
+
+```go
+err := win.Share(mygo.ShareOptions{
+	Text:   "Our trip",
+	URL:    "https://example.com/trip",
+	Files:  []string{photoPath},
+	Anchor: mygo.Rectangle{X: 340, Y: 8, Width: 28, Height: 28}, // the share button
+})
+if errors.Is(err, errors.ErrUnsupported) {
+	// Linux has no share sheet.
+}
+```
+
+On macOS the picker points at `Anchor`, in the window's content area, or
+at its middle without one. Windows places its share window itself and
+shows `Title` at its top, which defaults to the first file's name, the URL
+or the text. `Share` returns once the sheet shows, not when the user has
+picked a service or dismissed it. Linux desktops and browsers have no
+share sheet, and `Share` fails there with an error that is
+`errors.ErrUnsupported`. `examples/share` shares text, a link and a file
+from its buttons.
+
 ## Child and modal windows
 
 A window with a `Parent` stays above it. With `Modal`, it also blocks its

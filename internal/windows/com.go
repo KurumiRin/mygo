@@ -88,6 +88,9 @@ type handler struct {
 	vtbl *[4]uintptr
 	refs int32
 	fn   func(a, b uintptr)
+	// agile tells that the handler says it is IAgileObject, as WinRT
+	// event sources want of their delegates (newAgileHandler).
+	agile bool
 }
 
 var (
@@ -100,7 +103,7 @@ func init() {
 	handlerVtbl = [4]uintptr{
 		syscall.NewCallback(func(this, riid, out uintptr) uintptr {
 			iid := *(*GUID)(native(riid))
-			if iid == iidIMarshal || iid == iidIAgileObject || iid == iidINoMarshal {
+			if iid == iidIMarshal || iid == iidINoMarshal || iid == iidIAgileObject && !handlerAgile(this) {
 				*(*uintptr)(native(out)) = 0
 				return eNoInterface
 			}
@@ -120,6 +123,13 @@ func init() {
 			return sOK
 		}),
 	}
+}
+
+func handlerAgile(this uintptr) bool {
+	handlersMu.Lock()
+	defer handlersMu.Unlock()
+	h := handlers[this]
+	return h != nil && h.agile
 }
 
 func handlerRef(this uintptr, delta int32) int32 {
@@ -144,6 +154,17 @@ func newHandler(fn func(a, b uintptr)) uintptr {
 	p := uintptr(unsafe.Pointer(h))
 	handlersMu.Lock()
 	handlers[p] = h
+	handlersMu.Unlock()
+	return p
+}
+
+// newAgileHandler is newHandler for a WinRT delegate, which says it is
+// agile as WinRT's own delegates do (WRL's and C++/WinRT's): an event
+// source could otherwise try to marshal it, which it cannot be.
+func newAgileHandler(fn func(a, b uintptr)) uintptr {
+	p := newHandler(fn)
+	handlersMu.Lock()
+	handlers[p].agile = true
 	handlersMu.Unlock()
 	return p
 }
